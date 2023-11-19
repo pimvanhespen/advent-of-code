@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"slices"
 	"strings"
@@ -154,7 +154,7 @@ func Next(current, next Board) {
 }
 
 func main() {
-	reader, err := aoc.Get(18)
+	reader, err := aoc.NewChallenge(2015, 18).Input()
 	if err != nil {
 		panic(err)
 	}

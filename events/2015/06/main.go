@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"log"
 	"regexp"
@@ -49,7 +49,7 @@ func (g *Grid[T]) Count(valuer func(T) int) int {
 }
 
 func main() {
-	input, err := aoc.Get(6)
+	input, err := aoc.NewChallenge(2015, 6).Input()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"strings"
 )
@@ -19,7 +19,7 @@ type Data struct {
 }
 
 func main() {
-	reader, err := aoc.Get(19)
+	reader, err := aoc.NewChallenge(2015, 19).Input()
 	if err != nil {
 		panic(err)
 	}

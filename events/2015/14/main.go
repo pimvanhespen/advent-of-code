@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"slices"
 	"strconv"
@@ -45,7 +45,7 @@ func (r Reindeer) SpeedOn(time int) int {
 }
 
 func main() {
-	reader, err := aoc.Get(14)
+	reader, err := aoc.NewChallenge(2015, 14).Input()
 	if err != nil {
 		panic(err)
 	}

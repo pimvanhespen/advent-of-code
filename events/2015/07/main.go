@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"log"
 	"maps"
@@ -67,7 +67,7 @@ type Input struct {
 }
 
 func main() {
-	input, err := aoc.Get(7)
+	input, err := aoc.NewChallenge(2015, 7).Input()
 	if err != nil {
 		log.Fatal(err)
 	}

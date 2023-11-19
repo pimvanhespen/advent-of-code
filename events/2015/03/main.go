@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"log"
 )
 
 func main() {
 
-	r, err := aoc.Get(03)
+	r, err := aoc.NewChallenge(2015, 3).Input()
 	if err != nil {
 		log.Fatal(err)
 	}

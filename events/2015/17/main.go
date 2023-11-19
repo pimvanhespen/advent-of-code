@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"strconv"
 )
 
 func main() {
-	reader, err := aoc.Get(17)
+	reader, err := aoc.NewChallenge(2015, 17).Input()
 	if err != nil {
 		panic(err)
 	}

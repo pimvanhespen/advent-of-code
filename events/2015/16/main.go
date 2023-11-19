@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"strconv"
 )
@@ -36,7 +36,7 @@ cars: 2
 perfumes: 1`
 
 func main() {
-	reader, err := aoc.Get(16)
+	reader, err := aoc.NewChallenge(2015, 16).Input()
 	if err != nil {
 		panic(err)
 	}

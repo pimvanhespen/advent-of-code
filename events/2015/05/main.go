@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"log"
 	"regexp"
@@ -16,7 +16,7 @@ var (
 
 func main() {
 
-	input, err := aoc.Get(5)
+	input, err := aoc.NewChallenge(2015, 5).Input()
 	if err != nil {
 		log.Fatal(err)
 	}

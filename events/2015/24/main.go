@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"math"
 	"os"
@@ -16,7 +16,7 @@ type Input struct {
 
 func main() {
 
-	aoc.Run[Input](24, os.Stdout,
+	aoc.New[Input](24, os.Stdout,
 		aoc.NewParser(parse),
 		aoc.NewSolver(part1),
 		aoc.NewSolver(part2),

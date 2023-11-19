@@ -1,15 +1,15 @@
 package main
 
 import (
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"github.com/pimvanhespen/aoc/2015/days/08/xstring"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
 	"io"
 	"log"
 	"strings"
 )
 
 func main() {
-	r, err := aoc.Get(8)
+	r, err := aoc.NewChallenge(2015, 8).Input()
 	if err != nil {
 		log.Fatal(err)
 	}

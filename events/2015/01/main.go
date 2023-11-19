@@ -5,11 +5,11 @@ import (
 	"io"
 	"log"
 
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 )
 
 func main() {
-	input, err := aoc.Get(1)
+	input, err := aoc.NewChallenge(2015, 1).Input()
 	if err != nil {
 		log.Fatal(err)
 	}

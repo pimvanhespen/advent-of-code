@@ -9,12 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 )
 
 func main() {
 
-	r, err := aoc.Get(02)
+	r, err := aoc.NewChallenge(2015, 2).Input()
 	if err != nil {
 		panic(err)
 	}

@@ -3,14 +3,14 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"log"
 	"math"
 )
 
 func main() {
-	r, err := aoc.Get(9)
+	r, err := aoc.NewChallenge(2015, 9).Input()
 	if err != nil {
 		log.Fatal(err)
 	}

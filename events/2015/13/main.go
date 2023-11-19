@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"strconv"
 	"strings"
@@ -14,7 +14,7 @@ type DirectedScores map[Person]map[Person]int
 
 func main() {
 
-	r, err := aoc.Get(13)
+	r, err := aoc.NewChallenge(2015, 13).Input()
 	if err != nil {
 		panic(err)
 	}

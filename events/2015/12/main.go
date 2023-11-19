@@ -3,14 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pimvanhespen/aoc/2015/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"regexp"
 	"strconv"
 )
 
 func main() {
-	r, err := aoc.Get(12)
+	r, err := aoc.NewChallenge(2015, 12).Input()
 	if err != nil {
 		panic(err)
 	}
