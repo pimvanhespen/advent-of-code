@@ -36,7 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("done")
+	os.Exit(0)
 }
 
 type Config struct {
@@ -49,15 +49,27 @@ func (c Config) IsValid() bool {
 	return c.Year >= 2015 && c.Day >= 1 && c.Day <= 25
 }
 
-func openFile(year, day uint) (io.WriteCloser, error) {
+func openFile(year, day uint) (_ io.WriteCloser, err error) {
 
 	y := strconv.Itoa(int(year))
 	d := fmt.Sprintf("%02d", day)
 
-	fp := filepath.Join("events", y, d, "main.go")
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("getting current working directory: %w", err)
+	}
+
+	fp := filepath.Join(wd, "events", y, d, "main.go")
 	dir := filepath.Dir(fp)
 
-	_, err := os.Stat(dir)
+	defer func() {
+		if err != nil {
+			return
+		}
+		_, _ = fmt.Fprintf(os.Stderr, "output: %s\n", fp)
+	}()
+
+	_, err = os.Stat(dir)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("checking directory: %w", err)

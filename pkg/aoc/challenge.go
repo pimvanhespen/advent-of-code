@@ -67,7 +67,7 @@ func problemDir(year, day int) (string, error) {
 		return "", err
 	}
 
-	p := filepath.Join(wd, "event", fmt.Sprintf("%04d/%02d", year, day))
+	p := filepath.Join(wd, "events", fmt.Sprintf("%04d/%02d", year, day))
 
 	return p, nil
 }
