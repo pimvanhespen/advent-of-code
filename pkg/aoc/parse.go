@@ -18,3 +18,9 @@ func ParseLines[T any](reader io.Reader, fn func(string) (T, error)) ([]T, error
 	}
 	return result, scanner.Err()
 }
+
+func ReadLines(reader io.Reader) ([]string, error) {
+	return ParseLines(reader, func(line string) (string, error) {
+		return line, nil
+	})
+}
