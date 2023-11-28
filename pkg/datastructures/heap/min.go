@@ -84,3 +84,7 @@ func (m *Min[P, T]) down(i int) {
 		i = c
 	}
 }
+
+func (m *Min[P, T]) Empty() bool {
+	return len(m.heap) == 0
+}
