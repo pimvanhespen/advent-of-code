@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -18,122 +19,6 @@ func main() {
 	event := aoc.New(2016, 21, parse)
 	fmt.Println("1:", aoc.Must(event.Run(part1)))
 	fmt.Println("2:", aoc.Must(event.Run(part2)))
-}
-
-type Instruction interface {
-	Execute([]byte) []byte
-}
-
-type SwapPosition struct {
-	From int
-	To   int
-}
-
-func (s SwapPosition) Execute(input []byte) []byte {
-	res := make([]byte, len(input))
-	copy(res, input)
-	res[s.From], res[s.To] = res[s.To], res[s.From]
-	return res
-}
-
-type SwapLetter struct {
-	From byte
-	To   byte
-}
-
-func (s SwapLetter) Execute(input []byte) []byte {
-	res := make([]byte, len(input))
-	copy(res, input)
-	from := bytes.IndexByte(res, s.From)
-	to := bytes.IndexByte(res, s.To)
-	res[from], res[to] = res[to], res[from]
-	return res
-}
-
-type RotateLeft struct {
-	Steps int
-}
-
-func (r RotateLeft) Execute(input []byte) []byte {
-	res := make([]byte, len(input))
-	copy(res, input)
-
-	return rotateLeft(res, r.Steps)
-}
-
-func rotateLeft(input []byte, steps int) []byte {
-	steps = (steps + len(input)) % len(input)
-
-	if steps == 0 {
-		return input
-	}
-
-	return append(input[steps:], input[:steps]...)
-}
-
-type RotateRight struct {
-	Steps int
-}
-
-func (r RotateRight) Execute(input []byte) []byte {
-	res := make([]byte, len(input))
-	copy(res, input)
-	return rotateLeft(res, -r.Steps)
-}
-
-type RotateBasedOnPosition struct {
-	Letter byte
-}
-
-func (r RotateBasedOnPosition) Execute(input []byte) []byte {
-	steps := bytes.IndexByte(input, r.Letter)
-	if steps >= 4 {
-		steps++
-	}
-	steps++
-
-	res := make([]byte, len(input))
-	copy(res, input)
-	return rotateLeft(res, -steps)
-}
-
-type ReversePositions struct {
-	From int
-	To   int
-}
-
-func (r ReversePositions) Execute(input []byte) []byte {
-
-	res := make([]byte, len(input))
-	copy(res, input)
-
-	for i := 0; i <= (r.To - r.From); i++ {
-		res[r.From+i] = input[r.To-i]
-	}
-
-	return res
-}
-
-type MovePosition struct {
-	From int
-	To   int
-}
-
-func (m MovePosition) Execute(input []byte) []byte {
-	res := make([]byte, len(input))
-	copy(res, input)
-
-	// move by overwriting the destination
-	if m.From < m.To {
-		// move to the right
-		copy(res[m.From:], input[m.From+1:m.To+1])
-	} else {
-		// move to the left
-		copy(res[m.To+1:], input[m.To:m.From])
-	}
-	res[m.To] = input[m.From]
-
-	return res
 }
 
 func parse(reader io.Reader) (Input, error) {
@@ -226,13 +111,215 @@ func parse(reader io.Reader) (Input, error) {
 }
 
 func part1(input Input) string {
-	res := input.Seed
+	res := make([]byte, len(input.Seed))
+	copy(res, input.Seed)
+
 	for _, instruction := range input.Instructions {
-		res = instruction.Execute(res)
+		instruction.Apply(res)
 	}
 	return string(res)
 }
 
 func part2(input Input) string {
+	res := []byte("fbgdceah")
+
+	// Duo to the nature of the instructions, we can't just apply them in reverse.
+	// the rotate based on letter instruction is not (easily) reversible.
+	// Instead, we can try all permutations of the instructions and see which one
+	// results in the correct output.
+	permutations := permute(res, input.Instructions)
+
+	for _, permutation := range permutations {
+		before := string(permutation)
+		for _, instruction := range input.Instructions {
+			instruction.Apply(permutation)
+		}
+		if bytes.Equal(permutation, res) {
+			return before
+		}
+	}
 	return "n/a"
+}
+
+func permute(input []byte, todo []Instruction) [][]byte {
+	if len(todo) == 0 {
+		return [][]byte{input}
+	}
+
+	var results [][]byte
+
+	ins := todo[len(todo)-1]
+	for _, undo := range ins.Undo(input) {
+		results = append(results, permute(undo, todo[:len(todo)-1])...)
+	}
+	return results
+}
+
+type Instruction interface {
+	Apply([]byte)
+	Undo([]byte) [][]byte
+}
+
+type SwapPosition struct {
+	From int
+	To   int
+}
+
+func (s SwapPosition) Apply(data []byte) {
+	data[s.From], data[s.To] = data[s.To], data[s.From]
+}
+
+func (s SwapPosition) Undo(data []byte) [][]byte {
+	c := copyBytes(data)
+	s.Apply(c)
+	return [][]byte{c}
+}
+
+type SwapLetter struct {
+	From byte
+	To   byte
+}
+
+func (s SwapLetter) Apply(data []byte) {
+	from := bytes.IndexByte(data, s.From)
+	to := bytes.IndexByte(data, s.To)
+	data[from], data[to] = data[to], data[from]
+}
+
+func (s SwapLetter) Undo(data []byte) [][]byte {
+	c := copyBytes(data)
+	s.Apply(c)
+	return [][]byte{c}
+}
+
+type RotateLeft struct {
+	Steps int
+}
+
+func (r RotateLeft) Apply(data []byte) {
+	rotateLeft(data, r.Steps)
+}
+
+func (r RotateLeft) Undo(data []byte) [][]byte {
+	c := copyBytes(data)
+	rotateLeft(c, -r.Steps)
+	return [][]byte{c}
+}
+
+type RotateRight struct {
+	Steps int
+}
+
+func (r RotateRight) Apply(data []byte) {
+	rotateLeft(data, -r.Steps)
+}
+
+func (r RotateRight) Undo(data []byte) [][]byte {
+	c := copyBytes(data)
+	rotateLeft(c, r.Steps)
+	return [][]byte{c}
+}
+
+type RotateBasedOnPosition struct {
+	Letter byte
+}
+
+func (r RotateBasedOnPosition) Apply(data []byte) {
+	steps := bytes.IndexByte(data, r.Letter)
+	if steps >= 4 {
+		steps++
+	}
+	steps++
+
+	rotateLeft(data, -steps)
+}
+
+func (r RotateBasedOnPosition) Undo(data []byte) [][]byte {
+	var opts [][]byte
+	for i := 0; i < len(data); i++ {
+		prev := make([]byte, len(data))
+		copy(prev, data)
+
+		rot := i
+		if i >= 4 {
+			rot++
+		}
+		rot++
+
+		rotateLeft(prev, rot)
+
+		before := copyBytes(prev)
+
+		r.Apply(prev)
+
+		if bytes.Equal(prev, data) {
+			opts = append(opts, before)
+		}
+	}
+	return opts
+}
+
+type ReversePositions struct {
+	From int
+	To   int
+}
+
+func (r ReversePositions) Apply(data []byte) {
+	slices.Reverse(data[r.From : r.To+1])
+}
+
+func (r ReversePositions) Undo(data []byte) [][]byte {
+	c := copyBytes(data)
+	r.Apply(c)
+	return [][]byte{c}
+}
+
+type MovePosition struct {
+	From int
+	To   int
+}
+
+func (m MovePosition) Apply(input []byte) {
+	res := make([]byte, len(input))
+	copy(res, input)
+
+	// move by overwriting the destination
+	if m.From < m.To {
+		// move to the right
+		copy(res[m.From:], input[m.From+1:m.To+1])
+	} else {
+		// move to the left
+		copy(res[m.To+1:], input[m.To:m.From])
+	}
+	res[m.To] = input[m.From]
+
+	copy(input, res)
+}
+
+func (m MovePosition) Undo(input []byte) [][]byte {
+	c := copyBytes(input)
+	m.From, m.To = m.To, m.From
+	m.Apply(c)
+	return [][]byte{c}
+}
+
+func rotateLeft(input []byte, steps int) {
+	steps = (steps + len(input)) % len(input)
+
+	if steps == 0 {
+		return
+	}
+
+	before := make([]byte, len(input))
+	copy(before, input)
+
+	for i := range input {
+		input[i] = before[(i+len(input)+steps)%len(input)]
+	}
+}
+
+func copyBytes(data []byte) []byte {
+	res := make([]byte, len(data))
+	copy(res, data)
+	return res
 }

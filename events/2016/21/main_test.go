@@ -15,16 +15,12 @@ func TestRotateLeft_Execute(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
 		want   []byte
 	}{
 		{
 			name: "rotateLeft 1",
 			fields: fields{
 				Steps: 1,
-			},
-			args: args{
-				input: []byte("abcde"),
 			},
 			want: []byte("bcdea"),
 		},
@@ -33,18 +29,12 @@ func TestRotateLeft_Execute(t *testing.T) {
 			fields: fields{
 				Steps: 2,
 			},
-			args: args{
-				input: []byte("abcde"),
-			},
 			want: []byte("cdeab"),
 		},
 		{
 			name: "rotateLeft -1",
 			fields: fields{
 				Steps: -1,
-			},
-			args: args{
-				input: []byte("abcde"),
 			},
 			want: []byte("eabcd"),
 		},
@@ -54,8 +44,10 @@ func TestRotateLeft_Execute(t *testing.T) {
 			r := RotateLeft{
 				Steps: tt.fields.Steps,
 			}
-			if got := r.Execute(tt.args.input); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Execute() = %s, want %s", got, tt.want)
+			data := []byte("abcde")
+			r.Apply(data)
+			if !reflect.DeepEqual(data, tt.want) {
+				t.Errorf("Apply() = %s, want %s", data, tt.want)
 			}
 		})
 	}
@@ -75,7 +67,14 @@ func TestMovePosition_Execute(t *testing.T) {
 		args   args
 		want   []byte
 	}{
-		// TODO: Add test cases.
+		{
+			name: "move 1 to 4",
+			fields: fields{
+				From: 1,
+				To:   4,
+			},
+			want: []byte("acdeb"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -83,8 +82,10 @@ func TestMovePosition_Execute(t *testing.T) {
 				From: tt.fields.From,
 				To:   tt.fields.To,
 			}
-			if got := m.Execute(tt.args.input); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Execute() = %v, want %v", got, tt.want)
+			data := []byte("abcde")
+			m.Apply(data)
+			if !reflect.DeepEqual(data, tt.want) {
+				t.Errorf("Apply() = %s, want %s", data, tt.want)
 			}
 		})
 	}
@@ -110,9 +111,6 @@ func TestMovePosition_Execute1(t *testing.T) {
 				From: 1,
 				To:   4,
 			},
-			args: args{
-				input: []byte("abcde"),
-			},
 			want: []byte("acdeb"),
 		},
 		{
@@ -120,9 +118,6 @@ func TestMovePosition_Execute1(t *testing.T) {
 			fields: fields{
 				From: 4,
 				To:   1,
-			},
-			args: args{
-				input: []byte("abcde"),
 			},
 			want: []byte("aebcd"),
 		},
@@ -133,8 +128,11 @@ func TestMovePosition_Execute1(t *testing.T) {
 				From: tt.fields.From,
 				To:   tt.fields.To,
 			}
-			if got := m.Execute(tt.args.input); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Execute() = %v, want %v", got, tt.want)
+			data := []byte("abcde")
+			m.Apply(data)
+
+			if !reflect.DeepEqual(data, tt.want) {
+				t.Errorf("Apply() = %s, want %s", data, tt.want)
 			}
 		})
 	}
@@ -160,9 +158,6 @@ func TestReversePositions_Execute(t *testing.T) {
 				From: 1,
 				To:   4,
 			},
-			args: args{
-				input: []byte("abcde"),
-			},
 			want: []byte("aedcb"),
 		},
 	}
@@ -172,8 +167,10 @@ func TestReversePositions_Execute(t *testing.T) {
 				From: tt.fields.From,
 				To:   tt.fields.To,
 			}
-			if got := r.Execute(tt.args.input); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Execute() = %s, want %s", got, tt.want)
+			data := []byte("abcde")
+			r.Apply(data)
+			if !reflect.DeepEqual(data, tt.want) {
+				t.Errorf("Apply() = %s, want %s", data, tt.want)
 			}
 		})
 	}
@@ -195,12 +192,16 @@ func TestRotateBasedOnPosition_Execute(t *testing.T) {
 		{
 			name: "rotate based on position",
 			fields: fields{
-				Letter: 'b',
+				Letter: 'a',
 			},
-			args: args{
-				input: []byte("abcdef"),
+			want: []byte("eabcd"),
+		},
+		{
+			name: "rotate based on position",
+			fields: fields{
+				Letter: 'e',
 			},
-			want: []byte("efabcd"),
+			want: []byte("eabcd"),
 		},
 	}
 	for _, tt := range tests {
@@ -208,9 +209,48 @@ func TestRotateBasedOnPosition_Execute(t *testing.T) {
 			r := RotateBasedOnPosition{
 				Letter: tt.fields.Letter,
 			}
-			if got := r.Execute(tt.args.input); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Execute() = %s, want %s", got, tt.want)
+
+			data := []byte("abcde")
+			r.Apply(data)
+			if !reflect.DeepEqual(data, tt.want) {
+				t.Errorf("Apply() = %s, want %s", data, tt.want)
 			}
+		})
+	}
+}
+
+func TestUndo(t *testing.T) {
+
+	actions := map[string]Instruction{
+		"RotateLeft":              RotateLeft{Steps: 1},
+		"RotateRight":             RotateRight{Steps: 1},
+		"RotateBasedOnPosition_a": RotateBasedOnPosition{Letter: 'a'},
+		"RotateBasedOnPosition_b": RotateBasedOnPosition{Letter: 'b'},
+		"RotateBasedOnPosition_c": RotateBasedOnPosition{Letter: 'c'},
+		"RotateBasedOnPosition_d": RotateBasedOnPosition{Letter: 'd'},
+		"RotateBasedOnPosition_e": RotateBasedOnPosition{Letter: 'e'},
+		"SwapLetter":              SwapLetter{From: 'a', To: 'b'},
+		"SwapPosition":            SwapPosition{From: 1, To: 4},
+		"MovePosition":            MovePosition{From: 1, To: 4},
+		"ReversePositions":        ReversePositions{From: 1, To: 4},
+	}
+
+	for name, action := range actions {
+		t.Run(name, func(t *testing.T) {
+			data := []byte("abcde")
+			t.Run("Apply", func(t *testing.T) {
+				action.Apply(data)
+				if string(data) == "abcde" {
+					t.Errorf("%s.Apply() = abcde, want something else", name)
+				}
+			})
+
+			t.Run("Undo", func(t *testing.T) {
+				action.Undo(data)
+				if string(data) != "abcde" {
+					t.Errorf("%s.Undo() = %s, want abcde", name, data)
+				}
+			})
 		})
 	}
 }
