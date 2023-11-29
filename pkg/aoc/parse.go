@@ -33,3 +33,12 @@ func ReadAll(reader io.Reader) ([]byte, error) {
 	}
 	return bytes.TrimSpace(b), nil
 }
+
+func ParseInput[T any](reader io.Reader, fn func(string) (T, error)) (T, error) {
+	b, err := ReadAll(reader)
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	return fn(string(b))
+}
