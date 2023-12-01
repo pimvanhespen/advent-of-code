@@ -16,9 +16,14 @@ type Min[P aoc.Numeric, T any] struct {
 }
 
 // NewMin returns a new Min heap.
-func NewMin[P aoc.Numeric, T any]() *Min[P, T] {
+func NewMin[P aoc.Numeric, T any](opts ...Option) *Min[P, T] {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
+
 	return &Min[P, T]{
-		heap: make([]*Node[P, T], 0),
+		heap: make([]*Node[P, T], 0, o.size),
 	}
 }
 
@@ -87,4 +92,16 @@ func (m *Min[P, T]) down(i int) {
 
 func (m *Min[P, T]) Empty() bool {
 	return len(m.heap) == 0
+}
+
+type options struct {
+	size int
+}
+
+type Option func(*options)
+
+func WithSize(size int) Option {
+	return func(o *options) {
+		o.size = size
+	}
 }

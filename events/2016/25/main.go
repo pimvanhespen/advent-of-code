@@ -1,20 +1,23 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
 	"log"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 )
 
 type Input = [][]string
 
 func main() {
-	event := aoc.New(2016, 23, parse)
+	event := aoc.New(2016, 25, parse)
 	fmt.Println("1:", aoc.Must(event.Run(part1)))
-	fmt.Println("2:", aoc.Must(event.Run(part2)))
 }
 
 func parse(r io.Reader) (Input, error) {
@@ -25,20 +28,28 @@ func parse(r io.Reader) (Input, error) {
 
 func part1(input Input) string {
 	c := NewComputer(input)
-	c.A = 7
 
-	c.Run()
+	a := 0
+	for {
+		a++
+		err := func(a int) error {
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
 
-	return aoc.Result(c.A)
-}
+			c.Reset()
+			c.A = a
+			return c.Run(ctx)
+		}(a)
 
-func part2(input Input) string {
-	c := NewComputer(input)
-	c.A = 12
-
-	c.Run()
-
-	return aoc.Result(c.A)
+		switch {
+		case err == nil:
+			panic("no error")
+		case errors.Is(err, ErrBadSignal):
+			// do nothing
+		case errors.Is(err, context.DeadlineExceeded):
+			return aoc.Result(a)
+		}
+	}
 }
 
 func isRegister(s string) bool {
@@ -67,6 +78,8 @@ func NewComputer(input Input) *Computer {
 			instruction = &Decrement{Reg: c.getReg(instr[1])}
 		case "jnz":
 			instruction = &Jump{Condition: c.getReg(instr[1]), Offset: c.getReg(instr[2])}
+		case "out":
+			instruction = &Out{Reg: c.getReg(instr[1])}
 		default:
 			panic(fmt.Sprintf("unknown instruction %s", instr[0]))
 		}
@@ -126,16 +139,27 @@ func (c *Computer) toggle(at int) {
 			From: instr.Condition,
 			To:   instr.Offset,
 		}
+	case *Out:
+		c.Program[at] = &Increment{Reg: instr.Reg}
 	default:
 		panic(fmt.Sprintf("unknown instruction %T", instr))
 	}
 }
 
-func (c *Computer) Run() {
+var ErrBadSignal = errors.New("bad signal")
+
+func (c *Computer) Run(ctx context.Context) error {
 	var stackPtr int
 	var cycles int
 
+	var prev int = -1
+	var outs int
+
 	for stackPtr >= 0 && stackPtr < len(c.Program) {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		cycles++
 		v := c.Program[stackPtr]
 
@@ -155,6 +179,15 @@ func (c *Computer) Run() {
 				stackPtr += *instr.Offset
 				continue
 			}
+		case *Out:
+			value := *instr.Reg
+			if prev == value {
+				//log.Println("repeated", prev, outs)
+				return ErrBadSignal
+			}
+			prev = value
+			outs++
+			//fmt.Print(*instr.Reg)
 		default:
 			panic(fmt.Sprintf("unknown instruction %T", instr))
 		}
@@ -162,6 +195,14 @@ func (c *Computer) Run() {
 	}
 
 	log.Println("cycles:", cycles)
+	return nil
+}
+
+func (c *Computer) Reset() {
+	c.A = 0
+	c.B = 0
+	c.C = 0
+	c.D = 0
 }
 
 type Increment struct {
@@ -183,4 +224,8 @@ type Jump struct {
 
 type Toggle struct {
 	Offset *int
+}
+
+type Out struct {
+	Reg *int
 }

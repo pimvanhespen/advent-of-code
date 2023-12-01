@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/datastructures/heap"
 	"io"
-	"log"
+	"math/bits"
+	"os"
 	"regexp"
+	"runtime/pprof"
 	"strings"
 )
 
@@ -68,31 +71,36 @@ func parse(r io.Reader) (Input, error) {
 	return Input{State: s}, nil
 }
 
-func part1(input Input) string {
+type Route struct {
+	State State
+	Steps uint8
+}
+
+func solve(initial State) int {
+
+	f, err := os.Create("cpu.pprof")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	if err = pprof.StartCPUProfile(f); err != nil {
+		panic(err)
+	}
+	defer pprof.StopCPUProfile()
+
 	// Goal is to move all components to the top floor
 	// We can only move 2 components at a time
 
-	type Route struct {
-		State State
-		Steps uint8
-	}
+	queue := heap.NewMin[int, Route](heap.WithSize(1 << 16))
+	queue.Push(Route{State: initial, Steps: 0}, 0)
 
-	queue := make([]Route, 0, 1000)
-	queue = append(queue, Route{State: input.State, Steps: 0})
+	seen := make(map[State]struct{}, 1<<8)
 	least := uint8(255)
 
-	seen := map[State]struct{}{}
-
-	var count uint64
-
-	for len(queue) > 0 {
-		count++
-		if count%100000 == 0 {
-			log.Println(count, len(queue), least)
-		}
-
-		route := queue[0]
-		queue = queue[1:]
+	// BFS
+	for !queue.Empty() {
+		route := queue.Pop()
 
 		if route.Steps > least {
 			continue
@@ -106,49 +114,56 @@ func part1(input Input) string {
 			curr := state.Floors[state.Elevator]
 			target := state.Floors[targetFloor]
 
-			// select all possible combinations of 2 components that mayb be moved to the next floor
-			// select all possible combinations of 1 component that may be moved to the next floor
-
-			opts := curr.Options(target)
-			for _, move := range opts {
+			options := curr.Options(target)
+			for _, move := range options {
 
 				// build new state
-
 				next := state.Next(targetFloor, move)
+				next = normalize(next) // this is a huge optimization
 
-				fmt.Println(next.String())
+				if _, ok := seen[next]; ok {
+					continue
+				}
 
 				if done(next.Floors) {
 					least = min(least, route.Steps+1)
 					continue
 				}
 
-				if _, ok := seen[next]; ok {
-					continue
-				}
-
 				seen[next] = struct{}{}
-				queue = append(queue, Route{State: next, Steps: route.Steps + 1})
+
+				newRoute := Route{State: next, Steps: route.Steps + 1}
+				queue.Push(newRoute, int(newRoute.Steps))
 			}
 		}
 	}
 
-	// select available floors
+	return int(least)
+}
 
-	return aoc.Result(least)
+func part1(input Input) string {
+	count := solve(input.State)
+	return aoc.Result(count)
+}
+
+func part2(input Input) string {
+	s := input.State
+	s.Floors[0].Add(Components{3 << 5, 3 << 5})
+	count := solve(s)
+	return aoc.Result(count)
 }
 
 func done(floors [4]Floor) bool {
 	return floors[0].IsEmpty() && floors[1].IsEmpty() && floors[2].IsEmpty()
 }
 
-func part2(input Input) string {
-	return "n/a"
-}
-
 // --- Day 11: Radioisotope Thermoelectric Generators ---
 
 type Components [2]uint8
+
+func (c Components) Size() int {
+	return bits.OnesCount8(c[0]) + bits.OnesCount8(c[1])
+}
 
 func (c Components) String() string {
 	return fmt.Sprintf("C%08b R%08b", c[0], c[1])
@@ -159,16 +174,12 @@ type Floor struct {
 	RTG  uint8 // support up to 8 RTGs
 }
 
-func (f *Floor) Bytes() [2]byte {
-	return [2]byte{f.Chip, f.RTG}
-}
-
 func (f *Floor) String() string {
 	return fmt.Sprintf("C%08b R%08b", f.Chip, f.RTG)
 }
 
 func (f *Floor) IsEmpty() bool {
-	return f.Chip == 0 && f.RTG == 0
+	return f.Chip|f.RTG == 0
 }
 
 func (f *Floor) IsSafe() bool {
@@ -194,42 +205,47 @@ func (f *Floor) Remove(c Components) {
 }
 
 func (f *Floor) Options(target Floor) []Components {
-	var opts []Components
+	opts := make([]Components, 0, 4) // pre-allocate 4 options
 
 	appendSafe := func(c Components) {
-		if f.IsSafeWithout(c) && target.IsSafeWith(c) {
-			opts = append(opts, c)
+		if !f.IsSafeWithout(c) {
+			return
 		}
+		if !target.IsSafeWith(c) {
+			return
+		}
+		opts = append(opts, c)
 	}
 
-	for i := uint8(0); i < 8; i++ {
-		// Single layer: chip or RTG
-		if f.Chip&(1<<i) != 0 {
-			appendSafe([2]uint8{1 << i, 0})
+	// reduce loop iterations by only looping up to the highest bit set
+	merged := f.Chip | f.RTG | target.Chip | target.RTG
+	var maximum uint8 = 1 << bits.Len8(merged)
+	var minimum uint8 = 1 << bits.TrailingZeros8(merged)
+
+	for i := minimum; i < maximum; i <<= 1 {
+		if f.Chip&i != 0 {
+			appendSafe([2]uint8{i, 0})
 		}
 
-		if f.RTG&(1<<i) != 0 {
-			appendSafe([2]uint8{0, 1 << i})
+		if f.RTG&i != 0 {
+			appendSafe([2]uint8{0, i})
 		}
 
-		if f.Chip&(1<<i) != 0 && f.RTG&(1<<i) != 0 {
-			appendSafe([2]uint8{1 << i, 1 << i})
+		if f.Chip&i != 0 && f.RTG&i != 0 {
+			appendSafe([2]uint8{i, i})
 		}
 
-		// Double layer: chip and RTG
-		for j := uint8(i + 1); j < 8; j++ {
-			if f.Chip&(1<<i) != 0 && f.RTG&(1<<j) != 0 {
-				appendSafe([2]uint8{1 << i, 1 << j})
+		for j := i << 1; j < maximum; j <<= 1 {
+			if f.Chip&i != 0 && f.RTG&j != 0 {
+				appendSafe([2]uint8{i, j})
 			}
 
-			// Double layer: 2 chips
-			if f.Chip&(1<<i) != 0 && f.Chip&(1<<j) != 0 {
-				appendSafe([2]uint8{1 << i, 1 << j})
+			if f.Chip&i != 0 && f.Chip&j != 0 {
+				appendSafe([2]uint8{i | j, 0})
 			}
 
-			// Double layer: 2 RTGs
-			if f.RTG&(1<<i) != 0 && f.RTG&(1<<j) != 0 {
-				appendSafe([2]uint8{1 << i, 1 << j})
+			if f.RTG&i != 0 && f.RTG&j != 0 {
+				appendSafe([2]uint8{0, i | j})
 			}
 		}
 	}
@@ -237,8 +253,63 @@ func (f *Floor) Options(target Floor) []Components {
 	return opts
 }
 
+func (f *Floor) OptionsWrite(target Floor, opts []Components) int {
+	opts = opts[:0] // reset slice
+	var written int
+
+	appendSafe := func(c Components) {
+		if !f.IsSafeWithout(c) {
+			return
+		}
+		if !target.IsSafeWith(c) {
+			return
+		}
+		opts = append(opts, c)
+		written++
+	}
+
+	// reduce loop iterations by only looping up to the highest bit set
+	merged := f.Chip | f.RTG | target.Chip | target.RTG
+	var maximum uint8 = 1 << bits.Len8(merged)
+	var minimum uint8 = 1 << bits.TrailingZeros8(merged)
+
+	for i := minimum; i < maximum; i <<= 1 {
+		if f.Chip&i != 0 {
+			appendSafe([2]uint8{i, 0})
+		}
+
+		if f.RTG&i != 0 {
+			appendSafe([2]uint8{0, i})
+		}
+
+		if f.Chip&i != 0 && f.RTG&i != 0 {
+			appendSafe([2]uint8{i, i})
+		}
+
+		for j := i << 1; j < maximum; j <<= 1 {
+			if f.Chip&i != 0 && f.RTG&j != 0 {
+				appendSafe([2]uint8{i, j})
+			}
+
+			if f.Chip&i != 0 && f.Chip&j != 0 {
+				appendSafe([2]uint8{i | j, 0})
+			}
+
+			if f.RTG&i != 0 && f.RTG&j != 0 {
+				appendSafe([2]uint8{0, i | j})
+			}
+		}
+	}
+
+	return written
+}
+
 func isSafe(chip, rtg uint8) bool {
-	return chip == 0 || rtg&^chip == 0
+	if chip == 0 || rtg == 0 {
+		return true
+	}
+
+	return chip&^rtg == 0
 }
 
 type State struct {
@@ -288,31 +359,22 @@ func (s State) String() string {
 }
 
 func (s State) Copy() State {
-	return State{
-		Elevator: s.Elevator,
-		Floors:   [4]Floor{s.Floors[0], s.Floors[1], s.Floors[2], s.Floors[3]},
-	}
+	return s // copy by value
 }
 
 // Moves generates possible moves from the current state.
 func (s State) Moves(from, to uint8) []Components {
-
-	moves := s.Floors[from].Options(s.Floors[to])
-
-	// todo: extra pruning
-
-	return moves
+	return s.Floors[from].Options(s.Floors[to])
 }
 
 func (s State) NextFloors() []uint8 {
-	var floors []uint8
-	if s.Elevator > 0 {
-		floors = append(floors, s.Elevator-1)
+	if s.Elevator == 0 {
+		return []uint8{1}
 	}
-	if s.Elevator < 3 {
-		floors = append(floors, s.Elevator+1)
+	if s.Elevator == 3 {
+		return []uint8{2}
 	}
-	return floors
+	return []uint8{s.Elevator - 1, s.Elevator + 1}
 }
 
 func (s State) Next(floor uint8, move Components) State {
@@ -323,21 +385,48 @@ func (s State) Next(floor uint8, move Components) State {
 	return next
 }
 
-func (s State) Valid() bool {
+func normalize(s State) State {
+	// we don't care which exact components are on which floor only the pairs matter
+	// e.g. C1 R1 C2 R2 is the same as C2 R2 C1 R1
 
-	var c [2]uint16
+	// we can use a lookup table to translate the components to a new position
+	// without using a map
+	var (
+		translations [8]uint8
+		seen         uint8
+		counter      uint8
+	)
 
-	for _, f := range s.Floors {
-		c[0] += uint16(f.Chip)
-		c[1] += uint16(f.RTG)
-		if !f.IsSafe() {
-			return false
+	normal := State{Elevator: s.Elevator}
+	for i, f := range s.Floors {
+		start := bits.Len8(f.Chip | f.RTG)
+		end := bits.TrailingZeros8(f.Chip | f.RTG)
+
+		for idx := end; idx < start; idx++ {
+			pos := uint8(1 << idx)
+			if f.Chip&pos == 0 && f.RTG&pos == 0 {
+				continue
+			}
+
+			// check if we've seen this component before
+			if seen&pos == 0 {
+				seen |= pos
+				translations[idx] = 1 << counter
+				counter++
+			}
+
+			// get the normal position of the component
+			v := translations[idx]
+
+			if f.Chip&pos != 0 {
+				normal.Floors[i].Chip |= v
+			}
+
+			if f.RTG&pos != 0 {
+				normal.Floors[i].RTG |= v
+			}
 		}
 	}
 
-	if c[0] != c[1] {
-		return false
-	}
-
-	return true
+	return normal
 }
