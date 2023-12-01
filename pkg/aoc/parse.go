@@ -3,8 +3,11 @@ package aoc
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io"
 )
+
+var IgnoreLine = errors.New("ignore line")
 
 func ParseLines[T any](reader io.Reader, fn func(string) (T, error)) ([]T, error) {
 	scanner := bufio.NewScanner(reader)
@@ -13,6 +16,9 @@ func ParseLines[T any](reader io.Reader, fn func(string) (T, error)) ([]T, error
 		line := scanner.Text()
 		value, err := fn(line)
 		if err != nil {
+			if errors.Is(err, IgnoreLine) {
+				continue
+			}
 			return nil, err
 		}
 		result = append(result, value)
