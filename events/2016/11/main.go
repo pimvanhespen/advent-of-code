@@ -125,12 +125,12 @@ func solve(initial State) int {
 					continue
 				}
 
+				seen[next] = struct{}{}
+
 				if done(next.Floors) {
 					least = min(least, route.Steps+1)
 					continue
 				}
-
-				seen[next] = struct{}{}
 
 				newRoute := Route{State: next, Steps: route.Steps + 1}
 				queue.Push(newRoute, int(newRoute.Steps))
@@ -251,57 +251,6 @@ func (f *Floor) Options(target Floor) []Components {
 	}
 
 	return opts
-}
-
-func (f *Floor) OptionsWrite(target Floor, opts []Components) int {
-	opts = opts[:0] // reset slice
-	var written int
-
-	appendSafe := func(c Components) {
-		if !f.IsSafeWithout(c) {
-			return
-		}
-		if !target.IsSafeWith(c) {
-			return
-		}
-		opts = append(opts, c)
-		written++
-	}
-
-	// reduce loop iterations by only looping up to the highest bit set
-	merged := f.Chip | f.RTG | target.Chip | target.RTG
-	var maximum uint8 = 1 << bits.Len8(merged)
-	var minimum uint8 = 1 << bits.TrailingZeros8(merged)
-
-	for i := minimum; i < maximum; i <<= 1 {
-		if f.Chip&i != 0 {
-			appendSafe([2]uint8{i, 0})
-		}
-
-		if f.RTG&i != 0 {
-			appendSafe([2]uint8{0, i})
-		}
-
-		if f.Chip&i != 0 && f.RTG&i != 0 {
-			appendSafe([2]uint8{i, i})
-		}
-
-		for j := i << 1; j < maximum; j <<= 1 {
-			if f.Chip&i != 0 && f.RTG&j != 0 {
-				appendSafe([2]uint8{i, j})
-			}
-
-			if f.Chip&i != 0 && f.Chip&j != 0 {
-				appendSafe([2]uint8{i | j, 0})
-			}
-
-			if f.RTG&i != 0 && f.RTG&j != 0 {
-				appendSafe([2]uint8{0, i | j})
-			}
-		}
-	}
-
-	return written
 }
 
 func isSafe(chip, rtg uint8) bool {
