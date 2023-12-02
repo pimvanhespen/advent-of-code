@@ -24,6 +24,7 @@ cookie.txt
 
 .DS_Store
 .idea
+.local
 
 events/**/input.txt
 events/**/demo
