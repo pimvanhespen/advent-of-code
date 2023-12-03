@@ -48,3 +48,9 @@ func ParseInput[T any](reader io.Reader, fn func(string) (T, error)) (T, error) 
 	}
 	return fn(string(b))
 }
+
+func ReadMap(reader io.Reader) ([][]byte, error) {
+	return ParseLines(reader, func(line string) ([]byte, error) {
+		return []byte(line), nil
+	})
+}
