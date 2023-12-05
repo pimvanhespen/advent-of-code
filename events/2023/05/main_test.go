@@ -119,3 +119,100 @@ func Test_part2(t *testing.T) {
 		})
 	}
 }
+
+func TestMap_NextMapping(t *testing.T) {
+	type fields struct {
+		From   string
+		To     string
+		Scales []Scale
+	}
+	type args struct {
+		r Range
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   []Mapping
+	}{
+		{
+			name: "example",
+			fields: fields{
+				From: "seed",
+				To:   "soil",
+				Scales: []Scale{
+					{
+						Dst: 0,
+						Src: 2,
+						Len: 98,
+					},
+					{
+						Dst: 150,
+						Src: 100,
+						Len: 50,
+					},
+				},
+			},
+			args: args{
+				r: Range{
+					From: 0,
+					To:   200,
+				},
+			},
+			want: []Mapping{
+				{
+					Before: Range{
+						From: 0,
+						To:   1,
+					},
+					After: Range{
+						From: 0,
+						To:   1,
+					},
+				},
+				{
+					Before: Range{
+						From: 2,
+						To:   100,
+					},
+					After: Range{
+						From: 0,
+						To:   98,
+					},
+				},
+				{
+					Before: Range{
+						From: 100,
+						To:   150,
+					},
+					After: Range{
+						From: 150,
+						To:   200,
+					},
+				},
+				{
+					Before: Range{
+						From: 150,
+						To:   200,
+					},
+					After: Range{
+						From: 150,
+						To:   200,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := Map{
+				From:   tt.fields.From,
+				To:     tt.fields.To,
+				Scales: tt.fields.Scales,
+			}
+			if got := m.NextMapping(tt.args.r); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NextMapping() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
