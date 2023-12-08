@@ -113,7 +113,7 @@ func (p *Preparer) getWriteCloser(filename string) (io.WriteCloser, error) {
 	root := "."
 
 	// check if file exists
-	fp := filepath.Join(root, "events", strconv.Itoa(int(p.cfg.Year)), strconv.Itoa(int(p.cfg.Day)), filename)
+	fp := filepath.Join(root, "events", strconv.Itoa(int(p.cfg.Year)), fmt.Sprintf("%02d", p.cfg.Day), filename)
 
 	_, err := os.Stat(fp)
 	switch {

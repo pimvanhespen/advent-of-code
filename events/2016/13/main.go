@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/advent-of-code/pkg/algorithms/astar"
 	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
+	"github.com/pimvanhespen/advent-of-code/pkg/astar"
 	"github.com/pimvanhespen/advent-of-code/pkg/datastructures/heap"
 	"io"
 	"strconv"

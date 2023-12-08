@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 )
 
 var IgnoreLine = errors.New("ignore line")
@@ -53,4 +56,19 @@ func ReadMap(reader io.Reader) ([][]byte, error) {
 	return ParseLines(reader, func(line string) ([]byte, error) {
 		return []byte(line), nil
 	})
+}
+
+var numberReg = regexp.MustCompile(`(-?\d+)`)
+
+func Ints(s string) ([]int, error) {
+	matches := numberReg.FindAllStringSubmatch(s, -1)
+	nums := make([]int, len(matches))
+	for i, match := range matches {
+		var err error
+		nums[i], err = strconv.Atoi(match[1])
+		if err != nil {
+			return nil, fmt.Errorf("parsing %q: %w", match[1], err)
+		}
+	}
+	return nums, nil
 }
