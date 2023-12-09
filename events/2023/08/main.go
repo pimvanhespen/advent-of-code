@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pimvanhespen/advent-of-code/pkg/arithmatic"
 	"io"
 	"strings"
 
@@ -98,17 +99,6 @@ func part2(input Input) string {
 	}
 
 	// calc LCM - least common multiple of all steps
-	lcm := steps[0]
-	for i := 1; i < len(steps); i++ {
-		lcm = lcm * steps[i] / gcd(lcm, steps[i])
-	}
-
+	lcm := arithmatic.LCM(steps...)
 	return fmt.Sprint(lcm)
-}
-
-func gcd(a, b int) int {
-	for b != 0 {
-		a, b = b, a%b
-	}
-	return a
 }
