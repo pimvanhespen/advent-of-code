@@ -2,6 +2,8 @@ package main
 
 import (
 	"io"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -130,4 +132,27 @@ func Test_extrapolate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkParts(b *testing.B) {
+	p, _ := os.Getwd()
+	f, err := os.Open(filepath.Join(p, "input.txt"))
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer f.Close()
+	ex, _ := parse(f)
+	b.ResetTimer()
+
+	b.Run("part1", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			part1(ex)
+		}
+	})
+
+	b.Run("part2", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			part2(ex)
+		}
+	})
 }
