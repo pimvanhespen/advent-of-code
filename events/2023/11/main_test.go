@@ -1,0 +1,97 @@
+package main
+
+import (
+	"io"
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
+)
+
+// exampleInput form the puzzle
+const exampleInput = `...#......
+.......#..
+#.........
+..........
+......#...
+.#........
+.........#
+..........
+.......#..
+#...#.....
+`
+
+func Test_parse(t *testing.T) {
+	type args struct {
+		r io.Reader
+	}
+	tests := []struct {
+		name string
+		args args
+		want Input
+	}{
+		{
+			name: "example",
+			args: args{
+				r: strings.NewReader(exampleInput),
+			},
+			want: Input{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parse(tt.args.r)
+			if err != nil {
+				t.Fatalf("parse() error = %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parse() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_part1(t *testing.T) {
+	tests := []struct {
+		name  string
+		input Input
+		want  string
+	}{
+		{
+			name:  "example",
+			input: aoc.Must(parse(strings.NewReader(exampleInput))),
+			want:  "374",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := part1(tt.input); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("part1() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_part2(t *testing.T) {
+	tests := []struct {
+		name  string
+		input Input
+		want  string
+	}{
+		{
+			name:  "example",
+			input: aoc.Must(parse(strings.NewReader(exampleInput))),
+			want:  "0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := part2(tt.input); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("part2() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}

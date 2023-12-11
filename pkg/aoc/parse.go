@@ -72,3 +72,25 @@ func Ints(s string) ([]int, error) {
 	}
 	return nums, nil
 }
+
+type Grid struct {
+	Width, Height int
+	Data          []byte
+}
+
+func ParseGrid(reader io.Reader) (Grid, error) {
+	b, err := io.ReadAll(reader)
+	if err != nil {
+		return Grid{}, err
+	}
+
+	b = bytes.TrimSpace(b)
+	width := bytes.IndexByte(b, '\n')
+	height := bytes.Count(b, []byte{'\n'}) + 1
+
+	return Grid{
+		Width:  width,
+		Height: height,
+		Data:   bytes.ReplaceAll(b, []byte{'\n'}, nil),
+	}, nil
+}
