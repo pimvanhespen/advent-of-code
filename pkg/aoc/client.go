@@ -2,6 +2,7 @@ package aoc
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -51,6 +52,23 @@ func NewClient(client *http.Client, base *url.URL, cookie string) (*Client, erro
 	}, nil
 }
 
+func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
+	cookie := &http.Cookie{
+		Name:  "session",
+		Value: c.cookie,
+	}
+
+	ua, err := base64.StdEncoding.DecodeString(`Z2l0aHViLmNvbS9waW12YW5oZXNwZW4vYWR2ZW50LW9mLWNvZGUgYnkgcGltdmFuaGVzcGVuQGdtYWlsLmNvbQ==`)
+	if err != nil {
+		return nil, err
+	}
+
+	req.AddCookie(cookie)
+	req.Header.Set("User-Agent", string(ua))
+
+	return c.client.Do(req)
+}
+
 func (c *Client) DownloadInput(ctx context.Context, year, day int) (io.ReadCloser, error) {
 
 	u := c.base.JoinPath(strconv.Itoa(year), "day", strconv.Itoa(day), "input")
@@ -60,13 +78,7 @@ func (c *Client) DownloadInput(ctx context.Context, year, day int) (io.ReadClose
 		return nil, err
 	}
 
-	// // req.Header.Add("Cookie", fmt.Sprintf("session=%s", cookie))
-	req.AddCookie(&http.Cookie{
-		Name:  "session",
-		Value: c.cookie,
-	})
-
-	resp, err := c.client.Do(req)
+	resp, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -87,17 +99,12 @@ func (c *Client) SubmitAnswer(ctx context.Context, year, day, part int, answer s
 		return err
 	}
 
-	req.AddCookie(&http.Cookie{
-		Name:  "session",
-		Value: c.cookie,
-	})
-
 	q := req.URL.Query()
 	q.Add("level", strconv.Itoa(part))
 	q.Add("answer", answer)
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := c.client.Do(req)
+	resp, err := c.doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -118,12 +125,7 @@ func (c *Client) GetLeaderboard(ctx context.Context, year, group int) (*Leaderbo
 		return nil, err
 	}
 
-	req.AddCookie(&http.Cookie{
-		Name:  "session",
-		Value: c.cookie,
-	})
-
-	resp, err := c.client.Do(req)
+	resp, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
