@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"time"
 )
 
 var _ Parser[int] = ParserFunc[int](nil)
@@ -48,6 +49,10 @@ func (d *Runner[Input]) load() (Input, error) {
 }
 
 func (d *Runner[Input]) Run(solve SolverFunc[Input]) (string, error) {
+	start := time.Now()
+	defer func() {
+		slog.Info("Finished", slog.Duration("Duration", time.Since(start)))
+	}()
 
 	in, err := d.load()
 	if err != nil {

@@ -78,6 +78,31 @@ type Grid struct {
 	Data          []byte
 }
 
+func (g Grid) Get(x, y int) (byte, bool) {
+	if x < 0 || x >= g.Width || y < 0 || y >= g.Height {
+		return 0, false
+	}
+	return g.Data[y*g.Width+x], true
+}
+
+func (g Grid) Set(x, y int, value byte) {
+	if x < 0 || x >= g.Width || y < 0 || y >= g.Height {
+		return
+	}
+	g.Data[y*g.Width+x] = value
+}
+
+func (g Grid) String() string {
+	var buf bytes.Buffer
+	for y := 0; y < g.Height; y++ {
+		for x := 0; x < g.Width; x++ {
+			buf.WriteByte(g.Data[y*g.Width+x])
+		}
+		buf.WriteByte('\n')
+	}
+	return buf.String()
+}
+
 func ParseGrid(reader io.Reader) (Grid, error) {
 	b, err := io.ReadAll(reader)
 	if err != nil {

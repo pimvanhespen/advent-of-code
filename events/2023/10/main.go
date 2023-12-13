@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/pimvanhespen/advent-of-code/pkg/aoc"
 	"io"
-	"log"
 )
 
 type Vec2 struct {
@@ -176,8 +175,6 @@ func part2(input Input) string {
 
 	start := loop[0]
 
-	log.Printf("start: %v", start)
-
 	startShape = [][]byte{
 		{'.', '.', '.'},
 		{'.', 'S', '.'},
@@ -259,8 +256,6 @@ func part2(input Input) string {
 			input.Set(Vec2{x, y}, scaled.Get(Vec2{x*3 + 1, y*3 + 1}))
 		}
 	}
-
-	fmt.Println(input.String())
 
 	// return inside
 	return fmt.Sprint(bytes.Count(input.Grid, []byte{'.'}))
