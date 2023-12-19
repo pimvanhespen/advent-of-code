@@ -119,3 +119,14 @@ func ParseGrid(reader io.Reader) (Grid, error) {
 		Data:   bytes.ReplaceAll(b, []byte{'\n'}, nil),
 	}, nil
 }
+
+func ParseGrid2D(reader io.Reader) ([][]byte, error) {
+	b, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	b = bytes.TrimSpace(b)
+	lines := bytes.Split(b, []byte{'\n'})
+	return lines, nil
+}
